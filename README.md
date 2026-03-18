@@ -1,6 +1,6 @@
 # intervals-icu-mcp
 
-A read-only MCP (Model Context Protocol) server for [Intervals.icu](https://intervals.icu).
+A read-only MCP (Model Context Protocol) server for [Intervals.icu](https://intervals.icu).  
 Gives any MCP-compatible AI assistant access to your activities, wellness data, fitness curves, training zones, and calendar.
 
 Compatible with any client that supports the MCP protocol, including [Claude](https://claude.ai) (Desktop, Code, and Web), [Cursor](https://cursor.com), [Windsurf](https://windsurf.com), and others.
@@ -28,23 +28,21 @@ Compatible with any client that supports the MCP protocol, including [Claude](ht
 
 ---
 
-## Get your Intervals.icu API key
+## Prerequisites
 
+- [Node.js](https://nodejs.org) v18 or later
+- An Intervals.icu account with an API key
+
+**Get your API key:**
 1. Log in to [intervals.icu](https://intervals.icu)
 2. Go to **Settings** → scroll down to **Developer Settings**
 3. Generate (or copy) your **API Key**
-
-You can use `0` as the athlete ID in all configs — the API resolves it automatically from your key.
 
 ---
 
 ## Installation
 
-### Option A — npx (recommended)
-
-The easiest option for most users. Requires [Node.js](https://nodejs.org) v18+ but no manual installation — the package is downloaded and run automatically.
-
-**Published package (once available on npm):**
+No installation needed — `npx` downloads and runs the package automatically.
 
 Add the following to your MCP client config, replacing `your_api_key_here` with your key:
 
@@ -64,36 +62,11 @@ Add the following to your MCP client config, replacing `your_api_key_here` with 
 }
 ```
 
-**Local clone (before publishing to npm):**
+`INTERVALS_ATHLETE_ID` can be left as `0` — the API resolves it automatically from your key.
 
-First build the project:
+**Config file locations:**
 
-```bash
-npm install
-npm run build
-```
-
-Then use the full absolute path to the project folder in your config:
-
-```json
-{
-  "mcpServers": {
-    "intervals-icu": {
-      "command": "npx",
-      "args": ["/absolute/path/to/intervals-icu-mcp"],
-      "env": {
-        "INTERVALS_API_KEY": "your_api_key_here",
-        "INTERVALS_ATHLETE_ID": "0",
-        "TRANSPORT": "stdio"
-      }
-    }
-  }
-}
-```
-
-**Where is the config file?**
-
-| Client | Config file location |
+| Client | Config file |
 |---|---|
 | Claude Desktop (macOS) | `~/Library/Application Support/Claude/claude_desktop_config.json` |
 | Claude Desktop (Windows) | `%APPDATA%\Claude\claude_desktop_config.json` |
@@ -104,68 +77,7 @@ After editing the config, fully restart your client.
 
 ---
 
-### Option B — Docker
-
-Useful for running the server as a persistent background service, or for exposing it over the network via ngrok.
-
-**Prerequisites:** [Docker](https://docs.docker.com/get-docker/) and Docker Compose.
-
-**1. Set up credentials:**
-
-```bash
-cp .env.example .env
-# Edit .env and set INTERVALS_API_KEY to your key
-```
-
-**2. Start the container:**
-
-```bash
-docker compose up -d
-```
-
-Verify it's running:
-
-```bash
-curl http://localhost:3000/health
-# {"status":"ok","server":"intervals-icu-mcp","version":"1.1.0","transport":"http"}
-```
-
-**3. Connect via config (stdio over docker exec):**
-
-This approach pipes directly into the running container. No API key is needed in the config since it's already set in `.env`.
-
-```json
-{
-  "mcpServers": {
-    "intervals-icu": {
-      "command": "docker",
-      "args": ["exec", "-i", "-e", "TRANSPORT=stdio", "intervals-icu-mcp", "node", "dist/index.js"]
-    }
-  }
-}
-```
-
-**4. Connect remotely via ngrok:**
-
-To expose the server over the internet (e.g. for use in a web-based MCP client):
-
-```bash
-ngrok http 3000
-```
-
-Then add the connector in your client using:
-
-```
-https://your-subdomain.ngrok-free.app/sse
-```
-
-> Note: Claude.ai web requires a Pro plan to use custom MCP connectors.
-
----
-
-### Option C — Claude Code (CLI)
-
-**Published package:**
+## Claude Code (CLI)
 
 ```bash
 claude mcp add intervals-icu \
@@ -173,16 +85,6 @@ claude mcp add intervals-icu \
   -e INTERVALS_ATHLETE_ID=0 \
   -e TRANSPORT=stdio \
   -- npx -y intervals-icu-mcp
-```
-
-**Local clone:**
-
-```bash
-claude mcp add intervals-icu \
-  -e INTERVALS_API_KEY=your_api_key_here \
-  -e INTERVALS_ATHLETE_ID=0 \
-  -e TRANSPORT=stdio \
-  -- npx /absolute/path/to/intervals-icu-mcp
 ```
 
 ---
@@ -198,17 +100,6 @@ claude mcp add intervals-icu \
 
 ---
 
-## Publishing to npm
-
-```bash
-npm login       # log in to your npmjs.com account
-npm publish     # builds automatically via prepublishOnly, then uploads
-```
-
-After publishing, users can use the package name directly — no local path needed.
-
----
-
 ## Example prompts
 
 ```
@@ -221,6 +112,12 @@ After publishing, users can use the package name directly — no local path need
 "What bikes do I have configured?"
 "Show me today's wellness entry"
 ```
+
+---
+
+## Development
+
+See [DEVELOPMENT.md](DEVELOPMENT.md) for instructions on running locally, using Docker, and contributing.
 
 ---
 
