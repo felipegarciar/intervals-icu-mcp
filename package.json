@@ -1,0 +1,43 @@
+{
+  "name": "intervals-icu-mcp",
+  "version": "1.0.0",
+  "description": "MCP server for read-only access to Intervals.icu activities and health data",
+  "type": "module",
+  "main": "dist/index.js",
+  "bin": {
+    "intervals-icu-mcp": "dist/index.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsx src/index.ts",
+    "start": "node dist/index.js",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "mcp",
+    "intervals.icu",
+    "cycling",
+    "training",
+    "fitness",
+    "claude"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/YOUR_GITHUB_USERNAME/intervals-icu-mcp"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "tsx": "^4.0.0",
+    "typescript": "^5.0.0"
+  }
+}

@@ -1,0 +1,7 @@
+src/
+Dockerfile
+docker-compose.yml
+.dockerignore
+.env
+.env.example
+*.log

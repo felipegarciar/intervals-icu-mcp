@@ -1,0 +1,12 @@
+services:
+  intervals-mcp:
+    build: .
+    container_name: intervals-icu-mcp
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - TRANSPORT=http
+      - PORT=3000
+      - INTERVALS_API_KEY=${INTERVALS_API_KEY}
+      - INTERVALS_ATHLETE_ID=${INTERVALS_ATHLETE_ID:-0}
