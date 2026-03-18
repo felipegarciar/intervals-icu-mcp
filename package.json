@@ -22,12 +22,14 @@
     "cycling",
     "training",
     "fitness",
-    "claude"
+    "claude",
+    "llm",
+    "ai"
   ],
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/YOUR_GITHUB_USERNAME/intervals-icu-mcp"
+    "url": "https://github.com/felipegarciar/intervals-icu-mcp#"
   },
   "engines": {
     "node": ">=18"
