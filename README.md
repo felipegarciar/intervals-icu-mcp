@@ -142,7 +142,7 @@ Add `-e INTERVALS_ALLOW_WRITES=true` to enable the write tools.
 ```
 "Show me my last 10 cycling activities"
 "What was my CTL/ATL trend over the past 3 months?"
-"Get the power curve for activity i132547490"
+"Get the power curve for activity i12345678"
 "How did my HRV look last week?"
 "What are my current power training zones?"
 "List my planned workouts for the next 2 weeks"

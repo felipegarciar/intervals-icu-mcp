@@ -164,7 +164,7 @@ function registerTools(s: McpServer) {
     "get_activity",
     "Get full details for a single activity by ID: all metrics, zone times, power/HR data, and optionally detected intervals. Use list_activities to find IDs.",
     {
-      activity_id: z.string().describe("The activity ID (e.g. 'i132547490')."),
+      activity_id: z.string().describe("The activity ID (e.g. 'i12345678')."),
       include_intervals: z.boolean().optional().default(true).describe("Include detected and manual intervals."),
     },
     async ({ activity_id, include_intervals }) => {
