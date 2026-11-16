@@ -48,11 +48,13 @@ Warmup
 
 Main set 3x
 - 2km 90%
-- 1km 55%
+- 500mtr 55%
 
 Cooldown
 - 10m 50%
 ```
+
+Each step is a line starting with `- `. `10m` means 10 minutes; distances are written `2km` or `500mtr` (metres). Targets can be `% of FTP`, watts (`200w`) or zones (`Z2`). A line ending in `3x` starts a repeat block that runs until the next blank line.
 
 Planned workouts reach a Garmin device through Garmin Connect only if **Upload planned workouts** is switched on in the Garmin section of Intervals.icu settings.
 
@@ -94,6 +96,8 @@ Add the following to your MCP client config, replacing `your_api_key_here` with 
 
 `INTERVALS_ATHLETE_ID` can be left as `0` — the API resolves it automatically from your key.
 
+To enable the [write tools](#write-tools-opt-in), add `"INTERVALS_ALLOW_WRITES": "true"` to `env`.
+
 **Config file locations:**
 
 | Client | Config file |
@@ -103,7 +107,7 @@ Add the following to your MCP client config, replacing `your_api_key_here` with 
 | Cursor | `.cursor/mcp.json` in your project, or `~/.cursor/mcp.json` globally |
 | Windsurf | `~/.codeium/windsurf/mcp_config.json` |
 
-After editing the config, fully restart your client.
+After editing the config, fully restart your client. If an older version keeps loading, use `"intervals-icu-mcp@latest"` in `args` so `npx` doesn't reuse its cached copy.
 
 ---
 
@@ -116,6 +120,8 @@ claude mcp add intervals-icu \
   -e TRANSPORT=stdio \
   -- npx -y intervals-icu-mcp
 ```
+
+Add `-e INTERVALS_ALLOW_WRITES=true` to enable the write tools.
 
 ---
 

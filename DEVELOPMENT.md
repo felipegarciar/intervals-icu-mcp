@@ -53,7 +53,7 @@ They call `POST`, `PUT` and `DELETE /api/v1/athlete/{id}/events[/{eventId}]` (se
 - In workout text `5m` is 5 minutes; distances are `1km` or `500mtr`. Distance steps come back with a `distance` in metres. A `Main set 3x` line followed by steps and a blank line becomes one step with `reps: 3` and nested steps.
 - `PUT` with only `name` changes the name and keeps the description and steps.
 - `delete_event` always sends `others=false`, so it never deletes the other events created with it. A deleted event then returns 404.
-- `download_event_workout` returned a 342-byte fit for a 5-step workout. ZWO has no distance steps, so the zwo export converts them to durations.
+- `download_event_workout` returned a 342-byte fit for a workout with a warmup, a 3x repeat of two distance steps and a cooldown. ZWO has no distance steps, so the zwo export converts them to durations.
 
 ### Hot reload (no build step)
 
@@ -118,6 +118,8 @@ https://your-subdomain.ngrok-free.app/sse
 
 > Note: Claude.ai web requires a Pro plan to use custom MCP connectors.
 
+> **Warning:** the HTTP server has no authentication of its own. Anyone who has the URL can use every registered tool with your API key. Keep `INTERVALS_ALLOW_WRITES` off for a server exposed this way, or anyone with the URL can change or delete events on your calendar.
+
 ---
 
 ## Transport modes
@@ -132,7 +134,38 @@ https://your-subdomain.ngrok-free.app/sse
 
 ## Publishing to npm
 
-```bash
-npm login
-npm publish     # runs npm run build automatically via prepublishOnly
-```
+Releases are published from the terminal, from an up-to-date `main` with no uncommitted changes. The npm package page shows the README and description of the latest published version, so commit doc changes before publishing.
+
+1. Bump the version. This updates `package.json` and `package-lock.json`, commits them as `x.y.z` and tags `vx.y.z`:
+
+   ```bash
+   npm version minor   # or: npm version patch / npm version 1.2.0
+   ```
+
+   Also update the version reported by the server: the `version: "x.y.z"` strings in `src/index.ts` (used by `McpServer` and `/health`).
+
+2. Check what will be uploaded (only `LICENSE`, `README.md`, `package.json` and `dist/`):
+
+   ```bash
+   npm pack --dry-run
+   ```
+
+3. Sign in, if `npm whoami` doesn't print your user. This opens npmjs.com in the browser:
+
+   ```bash
+   npm login
+   ```
+
+4. Publish. This runs `npm run build` first (via `prepublishOnly`) and may ask for a two-factor code:
+
+   ```bash
+   npm publish
+   ```
+
+5. Push the commit and the tag:
+
+   ```bash
+   git push origin main --follow-tags
+   ```
+
+Check the result with `npm view intervals-icu-mcp version`.
