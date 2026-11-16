@@ -26,10 +26,18 @@ const ATHLETE_ID = process.env.INTERVALS_ATHLETE_ID ?? "0";
 const BASE_URL = "https://intervals.icu/api/v1";
 const TRANSPORT = process.env.TRANSPORT ?? "http";
 const PORT = parseInt(process.env.PORT ?? "3000", 10);
+// Write tools (create/update/delete calendar events) are opt-in. Without this
+// flag the server registers only the read-only tools.
+const ALLOW_WRITES = ["true", "1", "yes"].includes(
+  (process.env.INTERVALS_ALLOW_WRITES ?? "").trim().toLowerCase()
+);
 
 if (!API_KEY) {
   console.error("[intervals-mcp] ERROR: INTERVALS_API_KEY environment variable is not set.");
   process.exit(1);
+}
+if (ALLOW_WRITES) {
+  console.error("[intervals-mcp] Write tools enabled (INTERVALS_ALLOW_WRITES)");
 }
 
 // ─── HTTP helper ─────────────────────────────────────────────────────────────
@@ -273,6 +281,100 @@ function registerTools(s: McpServer) {
     async ({ event_id }) => {
       const data = await apiGet(`/athlete/${ATHLETE_ID}/events/${event_id}`);
       return { content: [{ type: "text", text: JSON.stringify(data, null, 2) }] };
+    }
+  );
+
+  if (ALLOW_WRITES) registerWriteTools(s);
+}
+
+// ─── Write tools (opt-in via INTERVALS_ALLOW_WRITES) ─────────────────────────
+
+const EVENT_CATEGORIES = [
+  "WORKOUT", "RACE_A", "RACE_B", "RACE_C", "NOTE", "HOLIDAY", "SICK", "INJURED",
+] as const;
+
+const WORKOUT_TEXT_HELP =
+  "Native Intervals.icu workout text, one step per line starting with '- ', e.g. " +
+  "'- 10m 55%' (10 minutes at 55% FTP), '- 2km 200w' (2 km at 200 W), '- 500mtr Z2' " +
+  "(500 metres in Z2; 'm' alone means minutes, use 'mtr' for metres), '- 5m 60-80%' (ramp). " +
+  "A repeat block is a line like '3x' (or 'Main set 3x') followed by its steps, ended by a " +
+  "blank line. Free text lines become section headers. Steps are parsed by Intervals.icu; " +
+  "check the returned workout_doc to confirm the structure was understood.";
+
+/** Accept yyyy-MM-dd or a full local datetime; the API stores local datetimes. */
+function toLocalDateTime(value: string): string {
+  if (/^\d{4}-\d{2}-\d{2}$/.test(value)) return `${value}T00:00:00`;
+  if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2})?$/.test(value)) {
+    return value.length === 16 ? `${value}:00` : value;
+  }
+  throw new Error(`Invalid date '${value}': use yyyy-MM-dd or yyyy-MM-ddTHH:mm:ss (local time, no zone).`);
+}
+
+function registerWriteTools(s: McpServer) {
+
+  s.tool(
+    "create_event",
+    "Create a calendar event on the athlete's Intervals.icu calendar, typically a planned workout " +
+      "(category WORKOUT) whose steps are given as native workout text in 'description'. " +
+      "Planned workouts are pushed to Garmin Connect only if 'Upload planned workouts' is enabled " +
+      "in Intervals.icu settings. Returns the created event, including its id and parsed workout_doc.",
+    {
+      start_date_local: z.string().describe("Local date (yyyy-MM-dd) or local datetime (yyyy-MM-ddTHH:mm:ss) of the event."),
+      name: z.string().describe("Event name shown on the calendar and on the device."),
+      description: z.string().optional().describe(WORKOUT_TEXT_HELP),
+      category: z.enum(EVENT_CATEGORIES).optional().default("WORKOUT").describe("Event category. Defaults to WORKOUT."),
+      type: z.string().optional().default("Ride").describe("Sport type, e.g. 'Ride', 'VirtualRide', 'Run'. Defaults to 'Ride'."),
+      indoor: z.boolean().optional().describe("Mark the workout as indoor."),
+      external_id: z.string().optional().describe("Optional id of your own, to find the event again later."),
+    },
+    async ({ start_date_local, name, description, category, type, indoor, external_id }) => {
+      const body = {
+        start_date_local: toLocalDateTime(start_date_local),
+        name,
+        description,
+        category,
+        type,
+        indoor,
+        external_id,
+      };
+      const data = await apiRequest("POST", `/athlete/${ATHLETE_ID}/events`, {}, body);
+      return { content: [{ type: "text", text: JSON.stringify(data, null, 2) }] };
+    }
+  );
+
+  s.tool(
+    "update_event",
+    "Update an existing calendar event by id. Only the fields given are sent; others are left as they are. " +
+      "Use get_event or list_events to find the id.",
+    {
+      event_id: z.number().describe("The event ID (from list_events or create_event)."),
+      start_date_local: z.string().optional().describe("New local date (yyyy-MM-dd) or datetime (yyyy-MM-ddTHH:mm:ss)."),
+      name: z.string().optional().describe("New event name."),
+      description: z.string().optional().describe(WORKOUT_TEXT_HELP),
+      type: z.string().optional().describe("New sport type, e.g. 'Ride'."),
+      indoor: z.boolean().optional().describe("Mark the workout as indoor or outdoor."),
+    },
+    async ({ event_id, start_date_local, name, description, type, indoor }) => {
+      const body: Record<string, unknown> = { name, description, type, indoor };
+      if (start_date_local !== undefined) body.start_date_local = toLocalDateTime(start_date_local);
+      for (const k of Object.keys(body)) if (body[k] === undefined) delete body[k];
+      if (Object.keys(body).length === 0) {
+        throw new Error("Nothing to update: give at least one field to change.");
+      }
+      const data = await apiRequest("PUT", `/athlete/${ATHLETE_ID}/events/${event_id}`, {}, body);
+      return { content: [{ type: "text", text: JSON.stringify(data, null, 2) }] };
+    }
+  );
+
+  s.tool(
+    "delete_event",
+    "Delete a single calendar event by id. This cannot be undone. Only this event is deleted, never others.",
+    {
+      event_id: z.number().describe("The event ID to delete."),
+    },
+    async ({ event_id }) => {
+      const data = await apiRequest("DELETE", `/athlete/${ATHLETE_ID}/events/${event_id}`, { others: false });
+      return { content: [{ type: "text", text: JSON.stringify({ deleted: event_id, response: data }, null, 2) }] };
     }
   );
 }
