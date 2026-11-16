@@ -377,6 +377,32 @@ function registerWriteTools(s: McpServer) {
       return { content: [{ type: "text", text: JSON.stringify({ deleted: event_id, response: data }, null, 2) }] };
     }
   );
+
+  // Read-only, but registered with the write tools: it exists to check that a
+  // workout created through the API converts to a non-empty device file.
+  s.tool(
+    "download_event_workout",
+    "Download a planned workout as a device file (fit, zwo, mrc or erg), as Intervals.icu would export it. " +
+      "Returns the file size, and the contents (base64 for fit, text otherwise). A tiny fit file means the " +
+      "workout has no steps.",
+    {
+      event_id: z.number().describe("The event ID of a planned workout."),
+      format: z.enum(["fit", "zwo", "mrc", "erg"]).optional().default("fit").describe("File format. Defaults to fit."),
+    },
+    async ({ event_id, format }) => {
+      const res = await apiFetch("GET", `/athlete/${ATHLETE_ID}/events/${event_id}/download.${format}`);
+      const bytes = Buffer.from(await res.arrayBuffer());
+      const result: Record<string, unknown> = {
+        event_id,
+        format,
+        content_type: res.headers.get("content-type"),
+        size_bytes: bytes.length,
+      };
+      if (format === "fit") result.contents_base64 = bytes.toString("base64");
+      else result.contents = bytes.toString("utf8");
+      return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
+    }
+  );
 }
 
 // ─── Start ───────────────────────────────────────────────────────────────────
