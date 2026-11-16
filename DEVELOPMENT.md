@@ -46,11 +46,14 @@ Leave out `INTERVALS_ALLOW_WRITES` to run read-only. Run `npm run build` after e
 
 The write tools (`create_event`, `update_event`, `delete_event`, `download_event_workout`) live in `registerWriteTools` in `src/index.ts` and are registered only when `INTERVALS_ALLOW_WRITES` is `true`, `1` or `yes`. Keep any new tool that changes account data inside that function, so the default install stays read-only.
 
-They call `POST`, `PUT` and `DELETE /api/v1/athlete/{id}/events[/{eventId}]` (see the [API docs](https://intervals.icu/api-docs.html)). Notes:
+They call `POST`, `PUT` and `DELETE /api/v1/athlete/{id}/events[/{eventId}]` (see the [API docs](https://intervals.icu/api-docs.html)). Notes from testing against the live API (2026-11-16):
 
-- `start_date_local` is a local datetime; the tools accept `yyyy-MM-dd` and send `yyyy-MM-ddT00:00:00`.
-- The workout steps go in `description` as native workout text; Intervals.icu parses it into `workout_doc` and computes duration and load. Check `workout_doc` in the response to see that the steps were understood.
-- `delete_event` always sends `others=false`, so it never deletes the other events created with it.
+- `start_date_local` is a local datetime; the tools accept `yyyy-MM-dd` and send `yyyy-MM-ddT00:00:00`, which the API accepts and returns unchanged.
+- The workout steps go in `description` as native workout text; Intervals.icu parses it into `workout_doc` and computes duration, distance and load. Check `workout_doc` in the response to see that the steps were understood.
+- In workout text `5m` is 5 minutes; distances are `1km` or `500mtr`. Distance steps come back with a `distance` in metres. A `Main set 3x` line followed by steps and a blank line becomes one step with `reps: 3` and nested steps.
+- `PUT` with only `name` changes the name and keeps the description and steps.
+- `delete_event` always sends `others=false`, so it never deletes the other events created with it. A deleted event then returns 404.
+- `download_event_workout` returned a 342-byte fit for a 5-step workout. ZWO has no distance steps, so the zwo export converts them to durations.
 
 ### Hot reload (no build step)
 
