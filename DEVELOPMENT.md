@@ -118,7 +118,7 @@ https://your-subdomain.ngrok-free.app/sse
 
 > Note: Claude.ai web requires a Pro plan to use custom MCP connectors.
 
-> **Warning:** the HTTP server has no authentication of its own. Anyone who has the URL can use every registered tool with your API key. Keep `INTERVALS_ALLOW_WRITES` off for a server exposed this way, or anyone with the URL can change or delete events on your calendar.
+> Anyone with this URL can use the server with your API key; see [Security of the HTTP mode](#security-of-the-http-mode).
 
 ---
 
@@ -129,6 +129,16 @@ https://your-subdomain.ngrok-free.app/sse
 | `stdio` | Local MCP clients (Claude Desktop, Cursor, etc.) | `TRANSPORT=stdio` |
 | `http` | Docker, remote access, HTTP-based clients | `TRANSPORT=http` (default) |
 | `sse` | Legacy SSE clients | `TRANSPORT=sse` |
+
+### Security of the HTTP mode
+
+`stdio` opens no network port. The `http` and `sse` modes start a server that:
+
+- has no authentication: every request is made with the API key the server was started with;
+- listens on all network interfaces, so other devices on your network can reach it, not only `localhost`;
+- allows requests from any origin (CORS `*`), so web pages open in your browser can call it too.
+
+Run it this way only where you control who can reach the port, and keep `INTERVALS_ALLOW_WRITES` off unless you do. With writes on, anyone who can reach the server can create, change or delete events on your calendar. Securing a hosted or tunnelled server (firewall, reverse proxy with auth, private network) is up to whoever runs it.
 
 ---
 
