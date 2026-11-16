@@ -21,29 +21,44 @@ npm run build
 
 ### Connect to your MCP client
 
-Use the full absolute path to the project folder instead of the package name:
+Point the client at the built file instead of the npm package:
 
 ```json
 {
   "mcpServers": {
     "intervals-icu": {
-      "command": "npx",
-      "args": ["/absolute/path/to/intervals-icu-mcp"],
+      "command": "node",
+      "args": ["/absolute/path/to/intervals-icu-mcp/dist/index.js"],
       "env": {
         "INTERVALS_API_KEY": "your_api_key_here",
         "INTERVALS_ATHLETE_ID": "0",
-        "TRANSPORT": "stdio"
+        "TRANSPORT": "stdio",
+        "INTERVALS_ALLOW_WRITES": "true"
       }
     }
   }
 }
 ```
 
+Leave out `INTERVALS_ALLOW_WRITES` to run read-only. Run `npm run build` after each change and restart the client.
+
+### Write tools
+
+The write tools (`create_event`, `update_event`, `delete_event`, `download_event_workout`) live in `registerWriteTools` in `src/index.ts` and are registered only when `INTERVALS_ALLOW_WRITES` is `true`, `1` or `yes`. Keep any new tool that changes account data inside that function, so the default install stays read-only.
+
+They call `POST`, `PUT` and `DELETE /api/v1/athlete/{id}/events[/{eventId}]` (see the [API docs](https://intervals.icu/api-docs.html)). Notes:
+
+- `start_date_local` is a local datetime; the tools accept `yyyy-MM-dd` and send `yyyy-MM-ddT00:00:00`.
+- The workout steps go in `description` as native workout text; Intervals.icu parses it into `workout_doc` and computes duration and load. Check `workout_doc` in the response to see that the steps were understood.
+- `delete_event` always sends `others=false`, so it never deletes the other events created with it.
+
 ### Hot reload (no build step)
 
 ```bash
 INTERVALS_API_KEY=your_key TRANSPORT=stdio npm run dev
 ```
+
+Add `INTERVALS_ALLOW_WRITES=true` to load the write tools.
 
 ---
 

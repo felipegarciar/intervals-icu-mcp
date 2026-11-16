@@ -1,7 +1,7 @@
 {
   "name": "intervals-icu-mcp",
   "version": "1.0.1",
-  "description": "MCP server for read-only access to Intervals.icu activities and health data",
+  "description": "MCP server for Intervals.icu activities and health data: read-only by default, opt-in planned workout writes",
   "type": "module",
   "main": "dist/index.js",
   "bin": {

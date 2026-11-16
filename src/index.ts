@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 /**
  * Intervals.icu MCP Server
- * Read-only access to activities, health, and fitness data.
+ * Read-only access to activities, health, and fitness data, plus opt-in
+ * tools to create, update and delete calendar events (planned workouts).
  *
  * Required env vars:
  *   INTERVALS_API_KEY      — your API key from intervals.icu/settings
@@ -10,6 +11,7 @@
  * Optional env vars:
  *   TRANSPORT              — "http" (default), "sse", or "stdio"
  *   PORT                   — HTTP port (default 3000)
+ *   INTERVALS_ALLOW_WRITES — "true" to register the write tools (default off)
  */
 
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";

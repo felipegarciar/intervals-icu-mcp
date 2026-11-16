@@ -1,7 +1,8 @@
 # intervals-icu-mcp
 
-A read-only MCP (Model Context Protocol) server for [Intervals.icu](https://intervals.icu).  
+An MCP (Model Context Protocol) server for [Intervals.icu](https://intervals.icu), **read-only by default**.  
 Gives any MCP-compatible AI assistant access to your activities, wellness data, fitness curves, training zones, and calendar.
+Optionally, it can also create planned workouts on your calendar (see [Write tools](#write-tools-opt-in)).
 
 Compatible with any client that supports the MCP protocol, including [Claude](https://claude.ai) (Desktop, Code, and Web), [Cursor](https://cursor.com), [Windsurf](https://windsurf.com), and others.
 
@@ -25,6 +26,35 @@ Compatible with any client that supports the MCP protocol, including [Claude](ht
 | `list_calendars` | All calendars configured for the athlete |
 | `list_events` | Calendar events with date range and category filter |
 | `get_event` | Single calendar event by ID |
+
+These are the only tools registered unless you opt in to writes.
+
+### Write tools (opt-in)
+
+Set `INTERVALS_ALLOW_WRITES=true` to also register these tools. Without it the server cannot change anything in your account.
+
+| Tool | Description |
+|---|---|
+| `create_event` | Create a calendar event, typically a planned workout written in Intervals.icu workout text |
+| `update_event` | Change the date, name, workout text, sport type or indoor flag of an event |
+| `delete_event` | Delete a single event (only that one) |
+| `download_event_workout` | Export a planned workout as fit/zwo/mrc/erg, to check it converted to real steps |
+
+Workouts use the same text format as the Intervals.icu workout builder, for example:
+
+```
+Warmup
+- 10m 55%
+
+Main set 3x
+- 2km 90%
+- 1km 55%
+
+Cooldown
+- 10m 50%
+```
+
+Planned workouts reach a Garmin device through Garmin Connect only if **Upload planned workouts** is switched on in the Garmin section of Intervals.icu settings.
 
 ---
 
@@ -97,6 +127,7 @@ claude mcp add intervals-icu \
 | `INTERVALS_ATHLETE_ID` | — | `0` | Your athlete ID (`0` = auto-resolved from key) |
 | `TRANSPORT` | — | `http` | `stdio` for local clients, `http` for Docker/remote |
 | `PORT` | — | `3000` | HTTP port (Docker/remote mode only) |
+| `INTERVALS_ALLOW_WRITES` | — | off | `true` registers the [write tools](#write-tools-opt-in); anything else keeps the server read-only |
 
 ---
 
@@ -111,6 +142,7 @@ claude mcp add intervals-icu \
 "List my planned workouts for the next 2 weeks"
 "What bikes do I have configured?"
 "Show me today's wellness entry"
+"Put a 3x2km sweet-spot workout on my calendar for Saturday"   (needs INTERVALS_ALLOW_WRITES=true)
 ```
 
 ---
