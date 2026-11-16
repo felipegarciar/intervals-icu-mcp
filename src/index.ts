@@ -34,23 +34,49 @@ if (!API_KEY) {
 
 // ─── HTTP helper ─────────────────────────────────────────────────────────────
 
-async function apiGet<T>(
+type QueryParams = Record<string, string | number | boolean | undefined>;
+
+async function apiFetch(
+  method: "GET" | "POST" | "PUT" | "DELETE",
   path: string,
-  params: Record<string, string | number | boolean | undefined> = {}
-): Promise<T> {
+  params: QueryParams = {},
+  body?: unknown
+): Promise<Response> {
   const url = new URL(`${BASE_URL}${path}`);
   for (const [k, v] of Object.entries(params)) {
     if (v !== undefined) url.searchParams.set(k, String(v));
   }
   const credentials = Buffer.from(`API_KEY:${API_KEY}`).toString("base64");
+  const headers: Record<string, string> = {
+    Authorization: `Basic ${credentials}`,
+    Accept: "application/json",
+  };
+  if (body !== undefined) headers["Content-Type"] = "application/json";
   const res = await fetch(url.toString(), {
-    headers: { Authorization: `Basic ${credentials}`, Accept: "application/json" },
+    method,
+    headers,
+    body: body === undefined ? undefined : JSON.stringify(body),
   });
   if (!res.ok) {
-    const body = await res.text().catch(() => "");
-    throw new Error(`Intervals.icu API error ${res.status}: ${body}`);
+    const text = await res.text().catch(() => "");
+    throw new Error(`Intervals.icu API error ${res.status} (${method} ${path}): ${text}`);
   }
-  return res.json() as Promise<T>;
+  return res;
+}
+
+async function apiRequest<T>(
+  method: "GET" | "POST" | "PUT" | "DELETE",
+  path: string,
+  params: QueryParams = {},
+  body?: unknown
+): Promise<T> {
+  const res = await apiFetch(method, path, params, body);
+  const text = await res.text();
+  return (text ? JSON.parse(text) : {}) as T;
+}
+
+function apiGet<T>(path: string, params: QueryParams = {}): Promise<T> {
+  return apiRequest<T>("GET", path, params);
 }
 
 // ─── Tool registration ────────────────────────────────────────────────────────
